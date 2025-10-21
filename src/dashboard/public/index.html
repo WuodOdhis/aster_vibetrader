@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantum Vibe Trader Dashboard</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; background: #0b1220; color: #e8eefc; }
+      .card { background: #121a2b; border: 1px solid #1e2a44; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+      code { color: #c0d0ff; }
+    </style>
+  </head>
+  <body>
+    <h1>Quantum Vibe Trader</h1>
+    <div class="card">
+      <h3>Status</h3>
+      <pre id="state">Loading...</pre>
+    </div>
+    <script>
+      async function refresh() {
+        try {
+          const res = await fetch('/api/state');
+          const data = await res.json();
+          document.getElementById('state').textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          document.getElementById('state').textContent = 'Failed to load state';
+        }
+      }
+      refresh();
+      setInterval(refresh, 3000);
+    </script>
+  </body>
+  </html>
+
+

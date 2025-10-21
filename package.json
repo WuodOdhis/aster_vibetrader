@@ -1,0 +1,30 @@
+{
+  "name": "quantum-vibe-trader",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/dashboard/server.js",
+  "scripts": {
+    "start": "node src/dashboard/server.js",
+    "dev": "nodemon src/dashboard/server.js",
+    "trade": "node src/trade_runner.js",
+    "lint": "echo \"No linter configured\""
+  },
+  "dependencies": {
+    "axios": "^1.7.4",
+    "bottleneck": "^2.19.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
