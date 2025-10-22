@@ -5,6 +5,7 @@ const { AsterApiClient } = require('./aster/api_client');
 const { AsterWebSocket } = require('./aster/websocket_handler');
 const { decideTrade } = require('./ai/decision_engine');
 const { trading } = require('../config/trading_config');
+const logger = require('./utils/logger');
 
 async function main() {
   const api = new AsterApiClient();
@@ -29,8 +30,17 @@ async function main() {
       const positions = await getAccountPositions(api);
       const events = await collectSignals();
       const decision = await decideTrade({ symbol, candles: c1, positions, events, multiTf: { candles5m: c5, candles1h: c1, candles4h: c4 } });
-      // eslint-disable-next-line no-console
-      console.log('Decision', decision);
+      
+      // Log decision with full transparency
+      const loggedDecision = logger.logDecision(decision);
+      
+      // Emit to dashboard if available
+      try {
+        const { io } = require('./dashboard/server');
+        io.emit('new-decision', loggedDecision);
+      } catch (e) {
+        // Dashboard not running, continue
+      }
 
       const DRY_RUN = String(process.env.DRY_RUN || 'true').toLowerCase() !== 'false';
       if (!DRY_RUN && (decision.action === 'buy' || decision.action === 'sell') && decision.sizeUsd > 0) {
@@ -40,17 +50,41 @@ async function main() {
           const order = { symbol, side, type: 'MARKET', quantity: qty };
           try {
             const res = await api.placeOrder(order);
-            // eslint-disable-next-line no-console
-            console.log('Order placed', res);
+            
+            // Log successful trade
+            const trade = {
+              symbol,
+              side: decision.action.toUpperCase(),
+              quantity: qty,
+              price: c1[c1.length - 1]?.close || 0,
+              orderId: res.orderId || res.id,
+              status: 'filled',
+              equity: positions.equityUsd || 0
+            };
+            
+            const loggedTrade = logger.logTrade(trade);
+            
+            // Emit to dashboard
+            try {
+              const { io } = require('./dashboard/server');
+              io.emit('new-trade', loggedTrade);
+              io.emit('performance-update', logger.getPerformanceMetrics());
+            } catch (e) {
+              // Dashboard not running, continue
+            }
+            
+            logger.info('Order placed successfully', { orderId: res.orderId || res.id, symbol, qty });
           } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error('Order failed', e?.response?.data || e.message);
+            logger.error('Order failed', { 
+              symbol, 
+              error: e?.response?.data || e.message,
+              order 
+            });
           }
         }
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('Decision loop error', e.message);
+      logger.error('Decision loop error', { symbol, error: e.message, stack: e.stack });
     }
   }
 

@@ -9,3 +9,4 @@ Respond strictly as JSON: {"action":"buy|sell|hold","confidence":0..1}
 `;
 
 module.exports = { decisionPrompt };
+
